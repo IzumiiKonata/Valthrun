@@ -71,7 +71,7 @@ jobs:
         with:
           cache-on-failure: true
       - name: Build
-        run: cargo build --verbose --release --bin radar-server-standalone
+        run: cargo build --verbose --release --bin radar-server-standalone-${{ matrix.os }}
         env:
           RUSTFLAGS: ${{ matrix.flags }}
       - uses: actions/upload-artifact@v3
@@ -158,8 +158,8 @@ jobs:
         with:
           path: ${{ env.Release_DIR }}
 
-      - name: List downloaded artifacts
-        run: ls -R ${{ env.Release_DIR }}
+      - name: Zip radar server assets
+        run: zip -r ${{ env.Release_DIR }}/radar-www/radar-www.zip ${{ env.Release_DIR }}/radar-www
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -170,4 +170,8 @@ jobs:
           name: ${{ steps.tag.outputs.release_tag }} Valthrun
           body_path: release.txt
           files: |
-            ${{ env.Release_DIR }}/*.zip
+            ${{ env.Release_DIR }}/cs2_overlay/controller.exe
+            ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone-linux
+            ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone-windows.exe
+            ${{ env.Release_DIR }}/radar_client_standalone/radar-client-standalone.exe
+            ${{ env.Release_DIR }}/radar-www/radar-www.zip
