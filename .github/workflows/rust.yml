@@ -157,6 +157,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           path: ${{ env.Release_DIR }}
+        run: ls -R
 
       - name: Release
         uses: softprops/action-gh-release@v1
