@@ -100,12 +100,11 @@ jobs:
         run: cargo build --verbose --release --bin radar-client-standalone
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
-      - name: Upload release build to Discord
-        run: .github/workflows/discord_upload.sh target/release/radar-client-standalone.exe radar_client
-        shell: bash
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
-          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      - uses: actions/upload-artifact@v3
+        name: Upload
+        with:
+          name: radar_client_standalone
+          path: target/release/radar-client-standalone.exe
 
   build-overlay:
     name: CS2 Overlay
@@ -130,5 +129,5 @@ jobs:
       - uses: actions/upload-artifact@v3
         name: Upload
         with:
-          name: cs2-overlay
-          path: controller*.exe
+          name: cs2_overlay
+          path: target/release/controller.exe
