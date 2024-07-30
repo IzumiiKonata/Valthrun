@@ -10,21 +10,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust-check:
-    name: Rust Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Check fmt
-        run: rustup component add rustfmt && cargo fmt --check
-
   build-radar-web:
     name: Radar Web Scripts
     runs-on: ubuntu-latest
@@ -149,9 +134,8 @@ jobs:
       # Right now there are no tests specified
       # - name: Run tests
       #   run: cargo test --verbose
-      - name: Upload release build to Discord
-        run: .github/workflows/discord_upload.sh target/release/controller.exe controller
-        shell: bash
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
-          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      - uses: actions/upload-artifact@v3
+        name: Upload
+        with:
+          name: cs2-overlay
+          path: controller*.exe
