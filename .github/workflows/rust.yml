@@ -161,6 +161,11 @@ jobs:
       - name: Zip radar server assets
         run: zip -r ${{ env.Release_DIR }}/radar-www/radar-www.zip ${{ env.Release_DIR }}/radar-www
 
+      - name: Rename artifacts
+        run: |
+          mv ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone-linux
+          mv ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone.exe ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone-windows.exe
+
       - name: Release
         uses: softprops/action-gh-release@v1
         env:
@@ -171,7 +176,7 @@ jobs:
           body_path: release.txt
           files: |
             ${{ env.Release_DIR }}/cs2_overlay/controller.exe
-            ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone
-            ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone.exe
+            ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone-linux
+            ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone-windows.exe
             ${{ env.Release_DIR }}/radar_client_standalone/radar-client-standalone.exe
             ${{ env.Release_DIR }}/radar-www/radar-www.zip
