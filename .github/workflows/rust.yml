@@ -71,7 +71,7 @@ jobs:
         with:
           cache-on-failure: true
       - name: Build
-        run: cargo build --verbose --release --bin radar-server-standalone-${{ matrix.os }}
+        run: cargo build --verbose --release --bin radar-server-standalone
         env:
           RUSTFLAGS: ${{ matrix.flags }}
       - uses: actions/upload-artifact@v3
@@ -171,7 +171,7 @@ jobs:
           body_path: release.txt
           files: |
             ${{ env.Release_DIR }}/cs2_overlay/controller.exe
-            ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone-linux
-            ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone-windows.exe
+            ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone
+            ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone.exe
             ${{ env.Release_DIR }}/radar_client_standalone/radar-client-standalone.exe
             ${{ env.Release_DIR }}/radar-www/radar-www.zip
