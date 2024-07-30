@@ -131,9 +131,6 @@ jobs:
         run: cargo build --verbose --release --bin controller
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
-      # Right now there are no tests specified
-      # - name: Run tests
-      #   run: cargo test --verbose
       - uses: actions/upload-artifact@v3
         name: Upload
         with:
