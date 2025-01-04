@@ -10,25 +10,9 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust-check:
-    name: Rust Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2024-10-21
-          override: true
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Check fmt
-        run: rustup component add rustfmt && cargo fmt --check
-
   build-radar-web:
     name: Radar Web Scripts
     runs-on: ubuntu-latest
-    needs: [rust-check]
     steps:
       - uses: actions/checkout@v4
       - name: Set Node.js 16.x
@@ -58,10 +42,9 @@ jobs:
 
   build-radar-server:
     name: Radar Server (${{ matrix.build }})
-    needs: [rust-check]
     strategy:
       matrix:
-        build: [linux]
+        build: [linux, windows]
         include:
           - build: linux
             os: ubuntu-20.04
@@ -69,10 +52,10 @@ jobs:
             # https://github.com/clap-rs/clap/issues/1938#issuecomment-632186396
             flags: ''
 
-          # - build: windows
-          #   os: windows-latest
-          #   target: radar-server-standalone.exe
-          #   flags: -Ctarget-feature=+crt-static
+          - build: windows
+            os: windows-latest
+            target: radar-server-standalone.exe
+            flags: -Ctarget-feature=+crt-static
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -96,62 +79,9 @@ jobs:
           name: radar-server-${{ matrix.build }}
           path: target/release/${{ matrix.target }}
 
-  docker-radar-server:
-    runs-on: ubuntu-latest
-    needs: [build-radar-server, build-radar-web]
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        if: github.event_name != 'pull_request'
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ghcr.io/valthrun/cs2-radar-server
-          tags: |
-            type=ref,event=branch
-            type=sha
-        env:
-          DOCKER_METADATA_SHORT_SHA_LENGTH: 7
-
-      - name: Download radar binary
-        uses: actions/download-artifact@v4
-        with:
-          name: radar-server-linux
-          path: target/release/
-
-      - name: Download radar scripts
-        uses: actions/download-artifact@v4
-        with:
-          name: radar-www
-          path: radar/web/dist
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/cs2-radar-server.dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
   build-radar-client:
     name: Radar Client
     runs-on: windows-latest
-    needs: [rust-check]
 
     steps:
       - uses: actions/checkout@v4
@@ -190,7 +120,6 @@ jobs:
   build-overlay:
     name: CS2 Overlay
     runs-on: windows-latest
-    needs: [rust-check]
 
     steps:
       - uses: actions/checkout@v4
@@ -233,7 +162,6 @@ jobs:
   build-schema-dump:
     name: CS2 Schema Dumper
     runs-on: windows-latest
-    needs: [rust-check]
 
     steps:
       - uses: actions/checkout@v4
@@ -268,3 +196,52 @@ jobs:
         if: ${{ github.event_name != 'pull_request' }}
         env:
           ARTIFACT_API_KEY: ${{ secrets.ARTIFACT_API_KEY }}
+
+  Release:
+    needs: [ build-radar-web, build-radar-server, build-radar-client, build-overlay, build-schema-dump ]
+    runs-on: ubuntu-latest
+    env:
+      Release_DIR: /home/runner/work/release
+    steps:
+
+      - name: Set current time
+        id: set_time
+        run: echo "time=$(date + '%Y-%m-%d_%H-%M-%S')" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release tag
+        id: tag
+        run: |
+          echo "release_tag=$(date +"%Y%m%d_%H-%M-%S")" >> $GITHUB_OUTPUT
+          touch release.txt
+          echo "Commit Message:" >> release.txt
+          echo "${{ github.event.workflow_run.head_commit.message }}" >> release.txt
+          echo "Build Date: $(date +"%Y/%m/%d")" >> release.txt
+          echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ${{ env.Release_DIR }}
+
+      - name: Zip radar server assets
+        run: zip -r ${{ env.Release_DIR }}/radar-www/radar-www.zip ${{ env.Release_DIR }}/radar-www
+
+      - name: Rename artifacts
+        run: |
+          mv ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone-linux
+          mv ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone.exe ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone-windows.exe
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v.${{ steps.tag.outputs.release_tag }}
+          name: ${{ steps.tag.outputs.release_tag }} Valthrun
+          body_path: release.txt
+          files: |
+            ${{ env.Release_DIR }}/cs2_overlay/controller.exe
+            ${{ env.Release_DIR }}/radar-server-linux/radar-server-standalone-linux
+            ${{ env.Release_DIR }}/radar-server-windows/radar-server-standalone-windows.exe
+            ${{ env.Release_DIR }}/radar_client_standalone/radar-client-standalone.exe
+            ${{ env.Release_DIR }}/radar-www/radar-www.zip
