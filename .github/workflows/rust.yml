@@ -84,15 +84,14 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Install Valthrun Rust
-        run: .github\workflows\vt-rustc-setup.ps1
-        env:
-          VT_RUSTC: ${{ vars.VT_RUSTC }}
-          VT_RUSTC_AUTHORIZATION: ${{ secrets.VT_RUSTC_AUTHORIZATION }}
 
       - name: Get package version
         shell: bash
@@ -122,15 +121,14 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Install Valthrun Rust
-        run: .github\workflows\vt-rustc-setup.ps1
-        env:
-          VT_RUSTC: ${{ vars.VT_RUSTC }}
-          VT_RUSTC_AUTHORIZATION: ${{ secrets.VT_RUSTC_AUTHORIZATION }}
 
       - name: Get package version
         shell: bash
@@ -164,15 +162,14 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Install Valthrun Rust
-        run: .github\workflows\vt-rustc-setup.ps1
-        env:
-          VT_RUSTC: ${{ vars.VT_RUSTC }}
-          VT_RUSTC_AUTHORIZATION: ${{ secrets.VT_RUSTC_AUTHORIZATION }}
 
       - name: Get package version
         shell: bash
@@ -198,7 +195,7 @@ jobs:
           ARTIFACT_API_KEY: ${{ secrets.ARTIFACT_API_KEY }}
 
   Release:
-    needs: [ build-radar-web, build-radar-server, build-radar-client, build-overlay, build-schema-dump ]
+    needs: [ build-radar-web, build-radar-server, build-radar-client, build-overlay ]
     runs-on: ubuntu-latest
     env:
       Release_DIR: /home/runner/work/release
